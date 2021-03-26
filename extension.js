@@ -17,9 +17,7 @@ function activate(context) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "go-code-generation" is now active!');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
+	// generate getters, setters and constructor
 	let goCodeGen = vscode.commands.registerCommand('go-code-generation.gen', function () {
 
 		// check file is open
@@ -60,6 +58,9 @@ function createQuickPickBox(struct_dict) {
 	var pickable_names = []
 	for (const [struct_name, field_dict] of Object.entries(struct_dict)) {
 	
+		var con_string = struct_name + " Constructor"
+		pickable_names.push(con_string)
+		
 		for (const [field_name, field_type] of Object.entries(field_dict)) {
 
 			var get_string = struct_name + " Get " + field_name + " ( " + field_type + " )"
@@ -76,11 +77,13 @@ function createQuickPickBox(struct_dict) {
 	vscode.window.showQuickPick(pickable_names, {canPickMany: true, placeHolder: "Select you getters and/or setters"}).then(items => {
 
 		if (items != null) {
-			items.forEach(item => {
+			items.reverse().forEach(item => {
 			
 				var split = item.split(/\s+/)
 
-				if (split[1] == "Get") {
+				if (split[1] == "Constructor") {
+					insertText(createConstructor(split[0], struct_dict[split[0]]))
+				} else if (split[1] == "Get") {
 					insertText(createGet(lower_case(split[0][0]), split[0], split[2], split[4]))
 				} else {
 					insertText(createSet(lower_case(split[0][0]), split[0], split[2], split[4]))
@@ -91,14 +94,41 @@ function createQuickPickBox(struct_dict) {
 	})
 }
 
+function createConstructor(object_name, field_dict) {
+	var cons = `
+
+// Constructor for <OBJ_NAME>
+func New<OBJ_NAME>(<PARAMETERS>) *<OBJ_NAME> {
+	o := new(<OBJ_NAME>)
+<PARAM_INIT>\treturn o
+}`
+
+	var params = ""
+	var inits = ""
+
+	for (const [field_name, field_type] of Object.entries(field_dict)) {
+
+		params = params.concat(field_name).concat(" ").concat(field_type).concat(", ")
+		inits = inits.concat("\to.").concat(field_name).concat(" = ").concat(field_name).concat("\n")	
+
+	}
+
+	// if params is not empty, remove last 2 characters
+	if (params !== "") {
+		params = params.substring(0, params.length - 2)
+	}
+
+	return cons.replace(/<OBJ_NAME>/g, object_name).replace(/<PARAMETERS>/g, params).replace(/<PARAM_INIT>/g, inits)
+}
+
 function createGet(object_name, object_type, field_name, field_type) {
 	var getter = `
 
 // Getter method for the field <FIELD_NAME> of type <FIELD_TYPE> in the object <OBJ_TYPE>
-func (<OBJ_NAME> *<OBJ_TYPE>) <FIELD_NAME>() <FIELD_TYPE> {		
+func (<OBJ_NAME> *<OBJ_TYPE>) <FIELD_NAME_CAP>() <FIELD_TYPE> {		
 	return <OBJ_NAME>.<FIELD_NAME>
 }`	
-	return getter.replace(/<OBJ_NAME>/g, object_name).replace(/<OBJ_TYPE>/g, object_type).replace(/<FIELD_NAME>/g, field_name).replace(/<FIELD_TYPE>/g, field_type)
+	return getter.replace(/<OBJ_NAME>/g, object_name).replace(/<OBJ_TYPE>/g, object_type).replace(/<FIELD_NAME_CAP>/g, capitalize(field_name)).replace(/<FIELD_NAME>/g, field_name).replace(/<FIELD_TYPE>/g, field_type)
 }
 
 function createSet(object_name, object_type, field_name, field_type) {
@@ -108,7 +138,7 @@ function createSet(object_name, object_type, field_name, field_type) {
 func (<OBJ_NAME> *<OBJ_TYPE>) Set<FIELD_NAME>(<FIELD_NAME> <FIELD_TYPE>) {		
 	<OBJ_NAME>.<FIELD_NAME> = <FIELD_NAME>
 }`	
-	return setter.replace(/<OBJ_NAME>/g, object_name).replace(/<OBJ_TYPE>/g, object_type).replace(/<FIELD_NAME>/g, field_name).replace(/<FIELD_TYPE>/g, field_type)
+	return setter.replace(/<OBJ_NAME>/g, object_name).replace(/<OBJ_TYPE>/g, object_type).replace(/<FIELD_NAME_CAP>/g, capitalize(field_name)).replace(/<FIELD_NAME>/g, field_name).replace(/<FIELD_TYPE>/g, field_type)
 }
 
 
@@ -133,10 +163,11 @@ function getStructs(file_text, regex) {
 				line = line.trim()
 
 				// get fields
-				// 3 cases for fields
+				// 4 cases for fields
 				// 1) Single variable per line
 				// 2) Multiple variable declaration in one line
 				// 3) Embedded types
+				// 4) Field name is capitalized and so public -  no need for getter
 
 				// first check for multiple variables with searching for comma
 				if (line.includes(",")) {					
@@ -152,7 +183,10 @@ function getStructs(file_text, regex) {
 						var tmp = split_line[split_line_index].split(",")
 						tmp.forEach(split_by_comma_elem => {
 							if (split_by_comma_elem != "") {
-								field_dict[capitalize(split_by_comma_elem)] = type
+								// check if field is private
+								if (isPrivate(split_by_comma_elem)) {
+									field_dict[split_by_comma_elem] = type
+								}
 							}
 						});
 					}
@@ -160,7 +194,10 @@ function getStructs(file_text, regex) {
 				// now check for single variable with splitting on whitespace
 				else if (line.split(/\s+/).length == 2) {						
 					var split_line = line.split(/\s+/)
-					field_dict[capitalize(split_line[0])] = split_line[1]
+					// check if private
+					if (isPrivate(split_line[0])) {
+						field_dict[split_line[0]] = split_line[1]
+					}
 				}
 				// else it must be embedded type
 				else {
@@ -175,6 +212,10 @@ function getStructs(file_text, regex) {
 	}
 	
 	return struct_dictionary
+}
+
+function isPrivate(word) {
+	return word.charAt(0) !== word.charAt(0).toUpperCase()
 }
 
 // this method is called when your extension is deactivated
@@ -193,7 +234,8 @@ let insertText = (value) => {
 	}
 
 	var snippet = new vscode.SnippetString(value)
-	editor.insertSnippet(snippet, editor.selection.end)
+	//editor.insertSnippet(snippet, editor.selection.end)
+	editor.insertSnippet(snippet, editor.document.positionAt(editor.document.getText().length))
 	
 }
 
