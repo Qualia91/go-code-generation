@@ -10,13 +10,14 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:go-code-generation.helloWorld"
+    "onLanguage:go",
+    "onCommand:go-code-generation.gen"
   ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "go-code-generation.helloWorld",
+        "command": "go-code-generation.gen",
         "title": "Go: Code Generation"
       }
     ]
