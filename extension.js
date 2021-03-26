@@ -20,7 +20,7 @@ function activate(context) {
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with  registerCommand
 	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('go-code-generation.gen', function () {
+	let goCodeGen = vscode.commands.registerCommand('go-code-generation.gen', function () {
 
 		// check file is open
 		var editor = vscode.window.activeTextEditor;
@@ -48,7 +48,8 @@ function activate(context) {
 		
 	});
 
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(goCodeGen);
+
 }
 
 function createQuickPickBox(struct_dict) {
@@ -80,9 +81,9 @@ function createQuickPickBox(struct_dict) {
 				var split = item.split(/\s+/)
 
 				if (split[1] == "Get") {
-					insertText(createGet(split[0][0], split[0], split[2], split[4]))
+					insertText(createGet(lower_case(split[0][0]), split[0], split[2], split[4]))
 				} else {
-					insertText(createSet(split[0][0], split[0], split[2], split[4]))
+					insertText(createSet(lower_case(split[0][0]), split[0], split[2], split[4]))
 				}
 			});
 		}
@@ -151,7 +152,7 @@ function getStructs(file_text, regex) {
 						var tmp = split_line[split_line_index].split(",")
 						tmp.forEach(split_by_comma_elem => {
 							if (split_by_comma_elem != "") {
-								field_dict[split_by_comma_elem] = type
+								field_dict[capitalize(split_by_comma_elem)] = type
 							}
 						});
 					}
@@ -159,7 +160,7 @@ function getStructs(file_text, regex) {
 				// now check for single variable with splitting on whitespace
 				else if (line.split(/\s+/).length == 2) {						
 					var split_line = line.split(/\s+/)
-					field_dict[split_line[0]] = split_line[1]
+					field_dict[capitalize(split_line[0])] = split_line[1]
 				}
 				// else it must be embedded type
 				else {
@@ -194,4 +195,12 @@ let insertText = (value) => {
 	var snippet = new vscode.SnippetString(value)
 	editor.insertSnippet(snippet, editor.selection.end)
 	
+}
+
+function capitalize(s) {
+	return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+function lower_case(s) {
+	return s.charAt(0).toLowerCase() + s.slice(1)
 }
