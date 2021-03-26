@@ -1,0 +1,40 @@
+{
+  "name": "go-code-generation",
+  "displayName": "Go Code Generation",
+  "description": "Generates Go Code so you don't have to!",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.46.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:go-code-generation.helloWorld"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "go-code-generation.helloWorld",
+        "title": "Hello World"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.0.4",
+    "@types/node": "^12.11.7",
+    "@types/vscode": "^1.46.0",
+    "eslint": "^7.19.0",
+    "glob": "^7.1.6",
+    "mocha": "^8.2.1",
+    "typescript": "^4.1.3",
+    "vscode-test": "^1.5.0"
+  }
+}
