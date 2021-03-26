@@ -17,7 +17,7 @@
     "commands": [
       {
         "command": "go-code-generation.helloWorld",
-        "title": "Hello World"
+        "title": "Go: Code Generation"
       }
     ]
   },
