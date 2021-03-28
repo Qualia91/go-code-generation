@@ -1,6 +1,5 @@
 'use strict'
 
-const { isTemplateSpan } = require('typescript');
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
@@ -46,8 +45,62 @@ function activate(context) {
 		
 	});
 
+	// generate interface methods
+	let goCodeGenInterface = vscode.commands.registerCommand('go-code-generation.interface', function () {
+
+		// check file is open
+		var editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			vscode.window.showErrorMessage("No file open")
+			return;
+		}
+
+		// check we have a go file open
+		if (!editor.document.fileName.endsWith(".go")) {
+			vscode.window.showErrorMessage("File is not a Go file")
+			return;
+		}
+
+		// get all text in file
+		var file_text = editor.document.getText()
+
+		const regex = /type +([^ ]+) +interface {(.+?(?=}))}/gs;
+
+		// look for interface
+		var interface_dictionary = getInterface(file_text, regex)
+
+		createQuickPickBoxInterface(interface_dictionary)
+
+		
+	});
+
 	context.subscriptions.push(goCodeGen);
 
+	context.subscriptions.push(goCodeGenInterface);
+}
+
+function createQuickPickBoxInterface(interface_dict) {
+
+	var pickable_names = []
+	for (const [struct_name, field_dict] of Object.entries(interface_dict)) {
+	
+		var con_string = struct_name
+		pickable_names.push(con_string)
+		
+	}
+	
+
+	vscode.window.showQuickPick(pickable_names, {canPickMany: true, placeHolder: "Select the interfaces you wish to implement"}).then(items => {
+
+		if (items != null) {
+			items.reverse().forEach(item => {
+
+				insertText(createInterface(item, interface_dict[item]))
+
+			});
+		}
+
+	})
 }
 
 function createQuickPickBox(struct_dict) {
@@ -74,7 +127,7 @@ function createQuickPickBox(struct_dict) {
 	}
 	
 
-	vscode.window.showQuickPick(pickable_names, {canPickMany: true, placeHolder: "Select you getters and/or setters"}).then(items => {
+	vscode.window.showQuickPick(pickable_names, {canPickMany: true, placeHolder: "Select your getters and/or setters"}).then(items => {
 
 		if (items != null) {
 			items.reverse().forEach(item => {
@@ -92,6 +145,26 @@ function createQuickPickBox(struct_dict) {
 		}
 
 	})
+}
+
+function createInterface(name, methods) {
+
+	var interfaces = ""
+
+	methods.forEach(method => {
+		interfaces = interfaces.concat(`
+
+// Implements <INTERFACE_NAME>
+// TODO: Comment Here
+func (<OBJ_NAME> *<OBJ_TYPE>) <METHOD_NAME> <RETURN_TYPE> {		
+	// Put code here
+}`);
+
+		interfaces = interfaces.replace(/<INTERFACE_NAME>/g, name).replace(/<METHOD_NAME>/g, method[0]).replace(/<RETURN_TYPE>/g, method[1])
+	});
+
+	return interfaces
+
 }
 
 function createConstructor(object_name, field_dict) {
@@ -141,6 +214,50 @@ func (<OBJ_NAME> *<OBJ_TYPE>) Set<FIELD_NAME>(<FIELD_NAME> <FIELD_TYPE>) {
 	return setter.replace(/<OBJ_NAME>/g, object_name).replace(/<OBJ_TYPE>/g, object_type).replace(/<FIELD_NAME_CAP>/g, capitalize(field_name)).replace(/<FIELD_NAME>/g, field_name).replace(/<FIELD_TYPE>/g, field_type)
 }
 
+function getInterface(file_text, regex) {
+	// get all interfaces
+	var all_matched = file_text.matchAll(regex)
+
+	var interface_dictionary = {}
+
+	for (const iterator of all_matched) {
+
+		// split matched string into a list of lines
+		var interface_contents_lines = iterator[2].split("\n")
+
+		// create method dictionary
+		var method_list = []
+
+		interface_contents_lines.forEach(line => {
+
+			if (line != "") {
+				// trip whitespace
+				line = line.trim()
+
+				var method = [] 
+					
+				var split_line = line.split(")")
+
+				method.push(split_line[0].concat(")"))
+
+				if (split_line.length == 2) {
+					method.push(split_line[1])
+				} else {
+					method.push("")
+				}
+
+				method_list.push(method)
+
+			}
+
+		});
+
+		interface_dictionary[iterator[1]] = method_list
+
+	}
+	
+	return interface_dictionary
+}
 
 function getStructs(file_text, regex) {
 	// get all structs
