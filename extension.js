@@ -89,18 +89,25 @@ function createQuickPickBoxInterface(interface_dict) {
 		
 	}
 	
+	let objectName = ""
 
-	vscode.window.showQuickPick(pickable_names, {canPickMany: true, placeHolder: "Select the interfaces you wish to implement"}).then(items => {
-
-		if (items != null) {
-			items.reverse().forEach(item => {
-
-				insertText(createInterface(item, interface_dict[item]))
-
-			});
-		}
-
+	vscode.window.showInputBox({ prompt: "Enter Object Type you wish to use for Implementation"})
+	.then(value => {
+		objectName = value
 	})
+	.then(() => {
+		vscode.window.showQuickPick(pickable_names, {canPickMany: true, placeHolder: "Select the interfaces you wish to implement"})
+		.then(items => {
+
+			if (items != null) {
+				items.reverse().forEach(item => {
+					insertText(createInterface(item, interface_dict[item], objectName))
+				});
+			}
+
+		})
+	})
+
 }
 
 function createQuickPickBox(struct_dict) {
@@ -147,11 +154,54 @@ function createQuickPickBox(struct_dict) {
 	})
 }
 
-function createInterface(name, methods) {
+function createInterface(name, methods, objectName) {
 
 	var interfaces = ""
 
 	methods.forEach(method => {
+
+		// need to add variable names to method
+		// start by getting everything between the brackets of the method
+		var matched = method[0].match(/\((.+?(?=))\)/s)
+
+		// if matched is empty, the function has no inputs and so carry on as usual
+		// else, we need to add variables into signature
+		if (matched !== null && matched.length > 0) {
+
+
+			// get everything up to first ( of method
+			method[0] = method[0].split("(")[0].concat("(")
+
+			// then split by commas to get multiple inputs
+			var currentMatches = matched[1].trim().split(",")
+
+			// overwrite method string as we will be creating a new one
+			// iterate over matches
+			currentMatches.forEach(currentMatch => {
+				
+				// trim whitespace
+				currentMatch = currentMatch.trim()
+				
+				// check if variables in method definition has a variable name
+				// this can be done by splitting on whitespace and checking for array bigger than 1
+				if (currentMatch.split(/\s+/).length > 1) {
+					// if it has variable names, just add this on normally
+					method[0] = method[0].concat(currentMatch).concat(", ")
+				} else {
+					method[0] = method[0].concat(lower_case(currentMatch)).concat(" ").concat(currentMatch).concat(", ")
+				}
+			});
+
+			// remove trailing comma
+			if (method[0] !== "") {
+				method[0] = method[0].substring(0, method[0].length - 2)
+			}
+
+			// now add trailing )
+			method[0] = method[0].concat(")")
+		}
+		
+
 		interfaces = interfaces.concat(`
 
 // Implements <INTERFACE_NAME>
@@ -160,7 +210,7 @@ func (<OBJ_NAME> *<OBJ_TYPE>) <METHOD_NAME> <RETURN_TYPE> {
 	// Put code here
 }`);
 
-		interfaces = interfaces.replace(/<INTERFACE_NAME>/g, name).replace(/<METHOD_NAME>/g, method[0]).replace(/<RETURN_TYPE>/g, method[1])
+		interfaces = interfaces.replace(/<OBJ_NAME>/g, lower_case(objectName)).replace(/<OBJ_TYPE>/g, objectName).replace(/<INTERFACE_NAME>/g, name).replace(/<METHOD_NAME>/g, method[0]).replace(/<RETURN_TYPE>/g, method[1])
 	});
 
 	return interfaces
@@ -208,7 +258,7 @@ function createSet(object_name, object_type, field_name, field_type) {
 	var setter = `
 
 // Setter method for the field <FIELD_NAME> of type <FIELD_TYPE> in the object <OBJ_TYPE>
-func (<OBJ_NAME> *<OBJ_TYPE>) Set<FIELD_NAME>(<FIELD_NAME> <FIELD_TYPE>) {		
+func (<OBJ_NAME> *<OBJ_TYPE>) Set<FIELD_NAME_CAP>(<FIELD_NAME> <FIELD_TYPE>) {		
 	<OBJ_NAME>.<FIELD_NAME> = <FIELD_NAME>
 }`	
 	return setter.replace(/<OBJ_NAME>/g, object_name).replace(/<OBJ_TYPE>/g, object_type).replace(/<FIELD_NAME_CAP>/g, capitalize(field_name)).replace(/<FIELD_NAME>/g, field_name).replace(/<FIELD_TYPE>/g, field_type)
