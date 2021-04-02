@@ -3,6 +3,15 @@
   "displayName": "Go Code Generation",
   "description": "Generates Go Code so you don't have to!",
   "version": "0.0.1",
+  "publisher": "bocdev",
+  "repository": {
+    "type": "git",
+    "directory": "https://github.com/Qualia91/go-code-generation.git"
+  },
+  "bugs":{
+    "url": "https://github.com/Qualia91/go-code-generation/issues"
+  },
+  "homepage": "https://github.com/Qualia91/go-code-generation/blob/master/README.md",
   "engines": {
     "vscode": "^1.46.0"
   },
@@ -19,7 +28,7 @@
     "commands": [
       {
         "command": "go-code-generation.gen",
-        "title": "Go: Code Generation"
+        "title": "Go: Class Generation"
       },
       {
         "command": "go-code-generation.interface",

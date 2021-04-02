@@ -175,6 +175,12 @@ function createInterface(name, methods, objectName) {
 			// then split by commas to get multiple inputs
 			var currentMatches = matched[1].trim().split(",")
 
+			// we need to cover the case where a few variables of the same type are init together
+			// this list will create a list of variables with no type.
+			// if it gets to a type eventually, the list will be added
+			// if it doesnt, the list will be added as types
+			var variable_list = []
+
 			// overwrite method string as we will be creating a new one
 			// iterate over matches
 			currentMatches.forEach(currentMatch => {
@@ -185,12 +191,25 @@ function createInterface(name, methods, objectName) {
 				// check if variables in method definition has a variable name
 				// this can be done by splitting on whitespace and checking for array bigger than 1
 				if (currentMatch.split(/\s+/).length > 1) {
+					var var_type = currentMatch.split(/\s+/)[1].trim() 
 					// if it has variable names, just add this on normally
+					// along with the list of variables collected so far without types
+					variable_list.forEach(variable => {
+						method[0] = method[0].concat(variable).concat(" ").concat(var_type).concat(", ")
+					})
 					method[0] = method[0].concat(currentMatch).concat(", ")
+					// now clear the list
+					variable_list = []
 				} else {
-					method[0] = method[0].concat(lower_case(currentMatch)).concat(" ").concat(currentMatch).concat(", ")
+					// if it doesn't have variable name, add it to the list
+					variable_list.push(currentMatch)
 				}
 			});
+
+			// if at this point there are variables in variable_list, iterate over and add as if they are types
+			variable_list.forEach(variable => {
+				method[0] = method[0].concat(lower_case(variable)).concat(" ").concat(variable).concat(", ")
+			})
 
 			// remove trailing comma
 			if (method[0] !== "") {

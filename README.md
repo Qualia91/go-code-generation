@@ -1,65 +1,118 @@
 # go-code-generation README
 
-This is the README for your extension "go-code-generation". After writing up a brief description, we recommend including the following sections.
+This is an Extension to generate some boilerplate code for you Go projects. Its currently under development.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Currently Supported Generation:
 
-For example if there is an image subfolder under your extension project workspace:
+- Constructors
+- Getters
+- Setters
+- Interface Implementation
 
-\!\[feature X\]\(images/feature-x.png\)
+## Usage
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+There commands currently available are:
 
-## Requirements
+- **Go: Class Generation:** This allows you to generate a constructor, getters and setters for a Go struct.
+- **Go: Interface Implementation:** This allows you to generate methods of an interface found in the currently open file for an object of your choosing.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Example
 
-## Extension Settings
+Say you have the following code in you Go file:
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+```go
+package main
 
-For example:
+type object struct {
+    variableone int
+    variabletwo, variable3 string
+}
 
-This extension contributes the following settings:
+type objectinterface interface {
+    methodone()
+    methodtwo(input int)
+    methodthree(inputone, inputtwo string) float32
+}
+```
+We can implement a constructor for `Object`, and getters and setters for `variableOne`, `variableTwo` and `variableThree` by:
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+- Opening the command pallet
+- Searching for and selecting `Go: Class Generation`
+- Selecting from the dropdown menu all the generated code you want
+- Pressing enter
 
-## Known Issues
+The following code will be generated:
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+```go
 
-## Release Notes
+// Constructor for object
+func Newobject(variableone int, variabletwo string, variable3 string) *object {
+	o := new(object)
+	o.variableone = variableone
+	o.variabletwo = variabletwo
+	o.variable3 = variable3
+	return o
+}
 
-Users appreciate release notes as you update your extension.
+// Getter method for the field variableone of type int in the object object
+func (o *object) Variableone() int {		
+	return o.variableone
+}
 
-### 1.0.0
+// Setter method for the field variableone of type int in the object object
+func (o *object) SetVariableone(variableone int) {		
+	o.variableone = variableone
+}
 
-Initial release of ...
+// Getter method for the field variabletwo of type string in the object object
+func (o *object) Variabletwo() string {		
+	return o.variabletwo
+}
 
-### 1.0.1
+// Setter method for the field variabletwo of type string in the object object
+func (o *object) SetVariabletwo(variabletwo string) {		
+	o.variabletwo = variabletwo
+}
 
-Fixed issue #.
+// Getter method for the field variable3 of type string in the object object
+func (o *object) Variable3() string {		
+	return o.variable3
+}
 
-### 1.1.0
+// Setter method for the field variable3 of type string in the object object
+func (o *object) SetVariable3(variable3 string) {		
+	o.variable3 = variable3
+}
+```
 
-Added features X, Y, and Z.
+Next, we can make `object` implement `objectinterface` by:
 
------------------------------------------------------------------------------------------------------------
+- Opening command pallet
+- Searching and selecting `Go: Interface Implementation`
+- Typing in the object name you wish to implement the interface and press enter. In our example, this is `object`
+- Select the interface from the drop down menu and press ok
 
-## Working with Markdown
+The following code will be generated:
 
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
+```go
+// Implements objectinterface
+// TODO: Comment Here
+func (object *object) methodone()  {		
+	// Put code here
+}
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
+// Implements objectinterface
+// TODO: Comment Here
+func (object *object) methodtwo(input int)  {		
+	// Put code here
+}
 
-### For more information
+// Implements objectinterface
+// TODO: Comment Here
+func (object *object) methodthree(inputone string, inputtwo string)  float32 {		
+	// Put code here
+}
+```
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
