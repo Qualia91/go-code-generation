@@ -1,6 +1,9 @@
-# go-code-generation README
+# Go Code Generation Extension for Visual Studio Code
 
-This is an Extension to generate some boilerplate code for you Go projects. Its currently under development.
+This is an Extension for Visual Studio Code to generate some boilerplate code for you Go projects. Its currently under development.
+
+## Download
+https://marketplace.visualstudio.com/items?itemName=bocdev.go-code-generation
 
 ## Features
 
