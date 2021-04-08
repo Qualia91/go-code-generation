@@ -119,7 +119,9 @@ function createQuickPickBox(struct_dict) {
 	for (const [struct_name, field_dict] of Object.entries(struct_dict)) {
 	
 		var con_string = struct_name + " Constructor"
+		var builder_string = struct_name + " Builder"
 		pickable_names.push(con_string)
+		pickable_names.push(builder_string)
 		
 		for (const [field_name, field_type] of Object.entries(field_dict)) {
 
@@ -134,7 +136,7 @@ function createQuickPickBox(struct_dict) {
 	}
 	
 
-	vscode.window.showQuickPick(pickable_names, {canPickMany: true, placeHolder: "Select your getters and/or setters"}).then(items => {
+	vscode.window.showQuickPick(pickable_names, {canPickMany: true, placeHolder: "Select what you would like to generate"}).then(items => {
 
 		if (items != null) {
 			items.reverse().forEach(item => {
@@ -143,6 +145,8 @@ function createQuickPickBox(struct_dict) {
 
 				if (split[1] == "Constructor") {
 					insertText(createConstructor(split[0], struct_dict[split[0]]))
+				} else if (split[1] == "Builder") {
+					insertText(createBuilder(split[0], struct_dict[split[0]]))
 				} else if (split[1] == "Get") {
 					insertText(createGet(lower_case(split[0][0]), split[0], split[2], split[4]))
 				} else {
@@ -236,6 +240,66 @@ func (<OBJ_NAME> *<OBJ_TYPE>) <METHOD_NAME> <RETURN_TYPE> {
 
 }
 
+function createBuilder(object_name, field_dict) {
+	var cons = `
+
+// Builder Object for <OBJ_NAME>
+type <OBJ_NAME>Builder struct {
+	<PARAMS>
+}
+
+// Constructor for <OBJ_NAME>Builder
+func New<OBJ_NAME>Builder() *<OBJ_NAME>Builder {
+	o := new(<OBJ_NAME>Builder)
+	return o
+}
+
+// Build Method which creates <OBJ_NAME>
+func (b *<OBJ_NAME>Builder) Build() *<OBJ_NAME> {
+	o := new (<OBJ_NAME>)
+<PARAM_INIT>\treturn o
+}
+
+<BUILDER_SETTERS>
+`
+
+	var params = ""
+	var inits = ""
+	var builder_setters = ""
+
+	// iterate over fields and make params, inits and builder setters
+	for (const [field_name, field_type] of Object.entries(field_dict)) {
+
+		params = params.concat(field_name).concat(" ").concat(field_type).concat("\n\t")
+		inits = inits.concat("\to.").concat(field_name).concat(" = b.").concat(field_name).concat("\n")	
+
+		var current_builder_setter = `
+// Builder method to set the field <FIELD_NAME> in <OBJ_NAME>Builder
+func (b *<OBJ_NAME>Builder) <FIELD_NAME_CAP>(v <FIELD_TYPE>) *<OBJ_NAME>Builder {
+	b.<FIELD_NAME> = v
+	return b
+}
+
+		`
+
+		// replace field information
+		current_builder_setter = current_builder_setter
+			.replace(/<FIELD_NAME>/g, field_name)
+			.replace(/<FIELD_NAME_CAP>/g, capitalize(field_name))
+			.replace(/<FIELD_TYPE>/g, field_type)
+
+		// then add to build setters var
+		builder_setters = builder_setters.concat(current_builder_setter)
+
+	}
+
+	return cons
+			.replace(/<BUILDER_SETTERS>/g, builder_setters)
+			.replace(/<OBJ_NAME>/g, object_name)
+			.replace(/<PARAMS>/g, params)
+			.replace(/<PARAM_INIT>/g, inits)
+}
+
 function createConstructor(object_name, field_dict) {
 	var cons = `
 
@@ -307,10 +371,11 @@ function getInterface(file_text, regex) {
 					
 				var split_line = line.split(")")
 
+				var outputs = line.substring(line.indexOf(')')+1)
 				method.push(split_line[0].concat(")"))
 
-				if (split_line.length == 2) {
-					method.push(split_line[1])
+				if (outputs !== "") {
+					method.push(outputs.trim())
 				} else {
 					method.push("")
 				}

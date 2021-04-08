@@ -12,13 +12,14 @@ Currently Supported Generation:
 - Constructors
 - Getters
 - Setters
+- Builder Pattern
 - Interface Implementation
 
 ## Usage
 
 There commands currently available are:
 
-- **Go: Class Generation:** This allows you to generate a constructor, getters and setters for a Go struct.
+- **Go: Class Generation:** This allows you to generate a constructor, getters and setters, and builders for a Go struct.
 - **Go: Interface Implementation:** This allows you to generate methods of an interface found in the currently open file for an object of your choosing.
 
 ## Example
@@ -89,6 +90,48 @@ func (o *object) SetVariable3(variable3 string) {
 	o.variable3 = variable3
 }
 ```
+
+
+If you want a builder created for the `object` struct,simple select builder in the drop down menu in the above command. The following code will be generated:
+
+```golang
+
+// Constructor for objectBuilder
+func NewobjectBuilder() *objectBuilder {
+	o := new(objectBuilder)
+	return o
+}
+
+// Build Method which creates object
+func (b *objectBuilder) Build() *object {
+	o := new (object)
+	o.variableone = b.variableone
+	o.variabletwo = b.variabletwo
+	o.variable3 = b.variable3
+	return o
+}
+
+// Builder method to set the field variableone in objectBuilder
+func (b *objectBuilder) Variableone(v int) *objectBuilder {
+	b.variableone = v
+	return b
+}
+
+// Builder method to set the field variabletwo in objectBuilder
+func (b *objectBuilder) Variabletwo(v string) *objectBuilder {
+	b.variabletwo = v
+	return b
+}
+
+// Builder method to set the field variable3 in objectBuilder
+func (b *objectBuilder) Variable3(v string) *objectBuilder {
+	b.variable3 = v
+	return b
+}
+
+```
+
+
 
 Next, we can make `object` implement `objectinterface` by:
 
