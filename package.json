@@ -22,7 +22,8 @@
   "activationEvents": [
     "onLanguage:go",
     "onCommand:go-code-generation.gen",
-    "onCommand:go-code-generation.interface"
+    "onCommand:go-code-generation.interface",
+    "onCommand:go-code-generation.servehttp"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -30,6 +31,10 @@
       {
         "command": "go-code-generation.gen",
         "title": "Go: Class Generation"
+      },
+      {
+        "command": "go-code-generation.servehttp",
+        "title": "Go: Serve HTTP Method Creation"
       },
       {
         "command": "go-code-generation.interface",

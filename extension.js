@@ -73,10 +73,80 @@ function activate(context) {
 
 		
 	});
+	
+	// generate ServeHTTP function for object
+	let goCodeGenServeHTTP = vscode.commands.registerCommand('go-code-generation.servehttp', function () {
+
+		// check file is open
+		var editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			vscode.window.showErrorMessage("No file open")
+			return;
+		}
+
+		// check we have a go file open
+		if (!editor.document.fileName.endsWith(".go")) {
+			vscode.window.showErrorMessage("File is not a Go file")
+			return;
+		}
+
+		// get all text in file
+		var file_text = editor.document.getText()
+		
+		const regex = /type +([^ ]+) +struct {(.+?(?=}))}/gs;
+
+		// look for structs
+		var struct_dictionary = getStructs(file_text, regex)
+
+		createQuickPickBoxServeHTTP(struct_dictionary)
+
+		
+	});
 
 	context.subscriptions.push(goCodeGen);
 
 	context.subscriptions.push(goCodeGenInterface);
+
+	context.subscriptions.push(goCodeGenServeHTTP);
+}
+
+function createQuickPickBoxServeHTTP(struct_dict) {
+
+	var http_methods = [
+		"Connect",
+		"Get",
+		"Post",
+		"Put",
+		"Patch",
+		"Delete",
+		"Head",
+		"Options",
+		"Trace"
+	]
+
+	var pickable_names = []
+	for (const [struct_name, field_dict] of Object.entries(struct_dict)) {
+	
+		var con_string = struct_name
+		pickable_names.push(con_string)
+
+	}
+	
+	let objectName = ""
+
+	vscode.window.showQuickPick(pickable_names, {canPickMany: false, placeHolder: "Enter Object Type you wish to use for the Handler"})
+	.then(value => {
+		objectName = value
+	})
+	.then(() => {
+		vscode.window.showQuickPick(http_methods, {canPickMany: true, placeHolder: "Select what REST functions you would like implemented"}).then(items => {
+
+			if (items != null) {
+				insertText(createServeHTTPFunction(objectName, items))
+			}
+
+		})
+	})
 }
 
 function createQuickPickBoxInterface(interface_dict) {
@@ -298,6 +368,33 @@ func (b *<OBJ_NAME>Builder) <FIELD_NAME_CAP>(v <FIELD_TYPE>) *<OBJ_NAME>Builder 
 			.replace(/<OBJ_NAME>/g, object_name)
 			.replace(/<PARAMS>/g, params)
 			.replace(/<PARAM_INIT>/g, inits)
+}
+
+function createServeHTTPFunction(object_name, http_methods) {
+	var cons = `
+
+// Serve HTTP Function to Implement RESTfull API
+func (h <OBJ_NAME>) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+<CASE_STATEMENTS>	default:
+		rw.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}`
+
+	var methods = ""
+
+	http_methods.forEach(method_name => {
+
+		methods = methods.concat(`	case http.Method<METHOD_NAME>:
+
+		rw.WriteHeader(http.StatusOK)
+`).replace(/<METHOD_NAME>/, method_name)
+
+	});
+
+
+	return cons.replace(/<OBJ_NAME>/g, object_name).replace(/<CASE_STATEMENTS>/g, methods)
 }
 
 function createConstructor(object_name, field_dict) {

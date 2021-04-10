@@ -14,6 +14,7 @@ Currently Supported Generation:
 - Setters
 - Builder Pattern
 - Interface Implementation
+- Serve HTTP Method on an object (REST impl)
 
 ## Usage
 
@@ -162,3 +163,45 @@ func (object *object) methodthree(inputone string, inputtwo string)  float32 {
 }
 ```
 
+To use an object as a `http.Handler`, you can auto generate the `ServeHTTP` function and choose what http requests you would like to implement in a switch statement by selecting `Go: Serve HTTP Method Creation`. It will generate the following for our object struct is all options are chosen:
+
+
+```golang
+
+// Serve HTTP Function to Implement RESTfull API
+func (h object) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+	case http.MethodConnect:
+
+		rw.WriteHeader(http.StatusOK)
+	case http.MethodGet:
+
+		rw.WriteHeader(http.StatusOK)
+	case http.MethodPost:
+
+		rw.WriteHeader(http.StatusOK)
+	case http.MethodPut:
+
+		rw.WriteHeader(http.StatusOK)
+	case http.MethodPatch:
+
+		rw.WriteHeader(http.StatusOK)
+	case http.MethodDelete:
+
+		rw.WriteHeader(http.StatusOK)
+	case http.MethodHead:
+
+		rw.WriteHeader(http.StatusOK)
+	case http.MethodOptions:
+
+		rw.WriteHeader(http.StatusOK)
+	case http.MethodTrace:
+
+		rw.WriteHeader(http.StatusOK)
+	default:
+		rw.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+```
