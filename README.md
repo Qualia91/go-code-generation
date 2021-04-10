@@ -22,6 +22,7 @@ There commands currently available are:
 
 - **Go: Class Generation:** This allows you to generate a constructor, getters and setters, and builders for a Go struct.
 - **Go: Interface Implementation:** This allows you to generate methods of an interface found in the currently open file for an object of your choosing.
+- **Go: Serve HTTP Method Creation:** This allows you to select a struct, select what http request methods you wish to support in your restful api, and generate a ServeHTTP method for it.
 
 ## Example
 
